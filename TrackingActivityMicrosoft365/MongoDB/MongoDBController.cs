@@ -15,7 +15,6 @@ namespace TrackingActivityMicrosoft365.MongoDB
         private const string UserName = "dataGetter";
         private const string DBName = "Office365";
         private const string Password = "6BnPudyx7KVLmiZ";
-        private const string CollectionName = "OfficeDataBase";
 
         public MongoDBController()
         {
@@ -24,7 +23,7 @@ namespace TrackingActivityMicrosoft365.MongoDB
 
         public static string MongoUri => $"mongodb+srv://{UserName}:{Password}@cluster0.xuex9.mongodb.net/{DBName}?retryWrites=true&w=majority";
 
-        public List<DataElementInfo> GetCollection()
+        public List<DataElementInfo> GetCollection(string CollectionName)
         {
             var database = _mongoClient.GetDatabase(DBName);
             var Collection = database.GetCollection<DataElementInfo>(CollectionName);
@@ -33,7 +32,7 @@ namespace TrackingActivityMicrosoft365.MongoDB
             return result.ToList();
         }
 
-        public void CreateElemetInfo(DataElementInfo elementInfo)
+        public void CreateElemetInfo(DataElementInfo elementInfo, string CollectionName)
         {
             var database = _mongoClient.GetDatabase(DBName);
             var collection = database.GetCollection<DataElementInfo>(CollectionName);

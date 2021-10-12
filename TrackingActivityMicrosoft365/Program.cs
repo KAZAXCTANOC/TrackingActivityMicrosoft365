@@ -1,8 +1,11 @@
 ﻿using Microsoft.Graph;
+using Microsoft.Graph.Auth;
+using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Threading;
@@ -13,28 +16,40 @@ using AuthenticationContext = Microsoft.IdentityModel.Clients.ActiveDirectory.Au
 
 namespace TrackingActivityMicrosoft365
 {
-    internal class Program
+    //Y3O7Q~NgKrv5~mSyoMfIaNV1kY4dCBt1xyjFz
+    //AH_7Q~iiqHTJnYKeZrE3HE06h1P7f05R4mDzR
+    public partial class Program
     {
-        private static string[] scopes = new[] { "User.Read", "Files.Read", "Files.Read.All" };
         private static string Instance = "https://login.microsoftonline.com/";
-        private static string ClientId = "f4f7d338-486e-490f-a87e-298f413f8942";
-        private static string TenantId = "8a648ae3-f42e-4858-b848-ef62d3422f6d";
-
+        private static string ClientIdProgress = "34f889b6-7528-4064-8840-0c4e3b355cfd";
+        private static string TenantIdProgress = "8a648ae3-f42e-4858-b848-ef62d3422f6d";
         private static MongoDBController _mongoDB = new MongoDBController();
-
         private static string access_token { get; set; }
 
-        private static async Task Main(string[] args)
+        private static async Task Main(string[] args) 
         {
             var Iam = SingAndReturnMe();
 
             await ScreenUserAsync(Iam);
 
+            var tasks = new List<Task>();
+
+            //tasks.Add(TrakingChangeAsync("E2:E1295", 0, "E", "OfficeDataBase"));
+            tasks.Add(TrakingChangeAsync("E2:E1295", 0, "F", "OfficeDataBase2"));
+            tasks.Add(TrakingChangeAsync("E2:E4327", 1, "E", "OfficeDataBase3"));
+
+            Task.WaitAll(tasks.ToArray());
+        }
+
+        private static async Task TrakingChangeAsync(string Range, int NumberPage, string Collumn, string CollectionName)
+        {
+            var Iam = SingAndReturnMe();
+
             while (true)
             {
-                if(await GetRange(Iam, "A1:C5"))
+                if (await GetRange(Iam, Range, NumberPage, Collumn, CollectionName))
                 {
-                    await GetRange(Iam, "A1:C5");
+                    await GetRange(Iam, Range, NumberPage, Collumn, CollectionName);
                 }
                 else
                 {
@@ -43,97 +58,70 @@ namespace TrackingActivityMicrosoft365
             }
         }
 
-
-        /// <summary>
-        /// Берет из полученого дока(онли excel) и указанной в функции Range данные
-        /// </summary>
-        /// <param name="graphClient"></param>
-        /// <param name="Range"></param>
-        /// <param name="itemId">Id ексельки</param>
-        /// <returns>Кароч то что было в рэндже</returns>
-        private static async Task<bool> GetRange(GraphServiceClient graphClient, string Range)
+        //Авторизированный клиент
+        //Диапазон ячеек Range(E2:E1295)
+        //Номер страницы(отсчет с нуля) 0
+        //Столбец E
+        private static async Task<bool> GetRange(GraphServiceClient me, string Range, int NumberPage, string Collumn, string CollectionName)
         {
             try
             {
-                char[] eng = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray();
-
-                //Получение списка документов в общем доступе
-                var driveItem = await graphClient.Me.Drive.SharedWithMe().Request().GetAsync();
-
-                //Получние всех листов в доке
-                var aw = await graphClient
-                    .Drives[driveItem.ElementAt(0)
-                    .RemoteItem.ParentReference.DriveId]
-                    .Items[driveItem.ElementAt(0).RemoteItem.Id]
+                var excel = await me.Groups["fa78a005-e9e8-4aa4-b01a-94d0d0c19fc5"].Drive.Items["01N2KAJ4PBJXRHT5QQ6ZCYPTTKRYQJ4BRY"]
                     .Workbook.Worksheets.Request().GetAsync();
 
-                //Перечисление всех листов
-                //          id      name
-                Dictionary<string, string> Lists = new Dictionary<string, string>();
-                foreach (var item in aw)
+                var SelectRange = await me.Groups["fa78a005-e9e8-4aa4-b01a-94d0d0c19fc5"].Drive.Items["01N2KAJ4PBJXRHT5QQ6ZCYPTTKRYQJ4BRY"]
+                    .Workbook.Worksheets[excel[NumberPage].Id].Range(Range).Request().GetAsync();
+
+                JArray SelectRangeMassiveElements = JArray.Parse(SelectRange.Text.RootElement.ToString());
+                JArray RangeMassiveFromDB = JArray.Parse(_mongoDB.GetCollection(CollectionName).Last().Data.ToString());
+
+                Dictionary<string, string> SelectedRangeMassive = new Dictionary<string, string>();
+                Dictionary<string, string> RangeFromDBMassive= new Dictionary<string, string>();
+
+                if(SelectRangeMassiveElements.ToString() != RangeMassiveFromDB.ToString())
                 {
-                    Lists.Add(item.Id, item.Name);
-                }
-
-                //Получние нужного листа из дока
-                var myRange = await graphClient
-                    .Drives[driveItem.ElementAt(0)
-                    .RemoteItem.ParentReference.DriveId]
-                    .Items[driveItem.ElementAt(0).RemoteItem.Id]
-                    .Workbook.Worksheets[Lists.ElementAt(0).Key]
-                    .Range(Range)
-                    .Request()
-                    .GetAsync();
-
-                var jmass = JArray.Parse(myRange.Text.RootElement.ToString());
-                JArray pastJMass = pastJMass = JArray.Parse(_mongoDB.GetCollection().Last().Data.ToString());
-
-                Dictionary<string, string> realMassive = new Dictionary<string, string>();
-
-                int x = 0;
-                foreach (var v in jmass)
-                {
-                    x++;
-                    for (int i = 0; i < v.Count(); i++)
-                    {
-                        realMassive.Add($"{eng[i]}{x}", v[i].ToString());
-                    }
-                }
-
-                if(pastJMass.ToString() != jmass.ToString())
-                {
-                    Dictionary<string, string> pastMassive = new Dictionary<string, string>();
-                    x = 0;
-                    foreach (var v in pastJMass)
+                    Stopwatch stopwatch = new Stopwatch();
+                    stopwatch.Start();
+                    int x = 0;
+                    foreach (var v in SelectRangeMassiveElements)
                     {
                         x++;
                         for (int i = 0; i < v.Count(); i++)
                         {
-                            pastMassive.Add($"{eng[i]}{x}", v[i].ToString());
+                            SelectedRangeMassive.Add($"{Collumn}{x}", v[i].ToString());
                         }
                     }
 
-                    _mongoDB.CreateElemetInfo(new DataElementInfo 
+                    x = 0;
+                    foreach (var v in RangeMassiveFromDB)
                     {
-                        Data = jmass.ToString(),
+                        x++;
+                        for (int i = 0; i < v.Count(); i++)
+                        {
+                            RangeFromDBMassive.Add($"{Collumn}{x}", v[i].ToString());
+                        }
+                    }
+
+                    List<ChangedElement> changedElements = СomparingDictionarys(SelectedRangeMassive, RangeFromDBMassive);
+
+                    _mongoDB.CreateElemetInfo(new DataElementInfo
+                    {
+                        Data = SelectRangeMassiveElements.ToString(),
                         LastView = DateTime.Now.ToString(),
-                        Changed = СomparingDictionarys(realMassive, pastMassive)
-                    });
+                        Changed = changedElements
+                    }, CollectionName);
+
+                    foreach (var El in changedElements)
+                    {
+                        Console.WriteLine($"\t{excel[NumberPage].Name}: произошли изменения в ячейке:{El.Cell} {DateTime.Now.ToString("F")}");
+                    }
+
+                    var ubdateBy = await me.Groups["fa78a005-e9e8-4aa4-b01a-94d0d0c19fc5"].Drive.Items["01N2KAJ4PBJXRHT5QQ6ZCYPTTKRYQJ4BRY"].LastModifiedByUser.Request().GetAsync();
+                    await SendNote(me, changedElements, ubdateBy, excel[NumberPage].Name);
+
+                    Console.WriteLine($"Затраченое время на сравнение, формирование массивов и сохранение в базу: {stopwatch.Elapsed}");
+                    stopwatch.Stop();
                 }
-
-                Console.ForegroundColor = ConsoleColor.Blue;
-
-                for (int i = 0; i < realMassive.Count; i += 3)
-                {
-                    Console.WriteLine("|{0,12}   |{1,12}   |{2,12}   |", realMassive.ElementAt(i).Value, realMassive.ElementAt(i + 1).Value, realMassive.ElementAt(i + 2).Value);
-                    Console.WriteLine("-------------------------------------------------");
-                }
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine($"NEW ITERATION {DateTime.Now}");
-                Console.ForegroundColor = ConsoleColor.Blue;
-                Console.WriteLine("-------------------------------------------------");
-                Console.ForegroundColor = ConsoleColor.White;
-
             }
             catch (Exception e)
             {
@@ -157,28 +145,26 @@ namespace TrackingActivityMicrosoft365
         }
         private static GraphServiceClient SingAndReturnMe(string userName = "n.ognev@bimprogress.team", string password="Gfgekz2002")
         {
-            string authority = string.Concat(Instance, TenantId);
+            string authority = string.Concat(Instance, TenantIdProgress);
             string resource = "https://graph.microsoft.com";
             try
             {
                 UserPasswordCredential userPasswordCredential = new UserPasswordCredential(userName, password);
                 AuthenticationContext authContext = new AuthenticationContext(authority);
-                var result = authContext.AcquireTokenAsync(resource, ClientId, userPasswordCredential).Result;
+                var result = authContext.AcquireTokenAsync(resource, ClientIdProgress, userPasswordCredential).Result;
                 var graphserviceClient = new GraphServiceClient(
                     new DelegateAuthenticationProvider(
                         (requestMessage) =>
                         {
-                            access_token = authContext.AcquireTokenSilentAsync(resource, ClientId).Result.AccessToken;
+                            access_token = authContext.AcquireTokenSilentAsync(resource, ClientIdProgress).Result.AccessToken;
                             requestMessage.Headers.Authorization = new AuthenticationHeaderValue("bearer", access_token);
                             return Task.FromResult(0);
                         }));
-                var User = graphserviceClient.Me.Request().GetAsync();
-
                 return graphserviceClient;
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine(e.Message);
+                Console.Error.WriteLine(e.InnerException.Message);
             }
             return null;
         }
@@ -199,6 +185,51 @@ namespace TrackingActivityMicrosoft365
             }
 
             return changedElements;
+        }
+        public static async Task<IUserJoinedTeamsCollectionPage> GetGroups(string userName = "n.ognev@bimprogress.team", string password = "Gfgekz2002")
+        {
+            var clientSecret = "Y3O7Q~NgKrv5~mSyoMfIaNV1kY4dCBt1xyjFz";
+            IConfidentialClientApplication confidentialClientApplication = ConfidentialClientApplicationBuilder
+                .Create(ClientIdProgress)
+                .WithTenantId(TenantIdProgress)
+                .WithClientSecret(clientSecret)
+                .Build();
+
+            ClientCredentialProvider authProvider = new ClientCredentialProvider(confidentialClientApplication);
+            GraphServiceClient graphClient = new GraphServiceClient(authProvider);
+
+            var groups = await graphClient.Groups.Request().Select(x => new { x.Id, x.DisplayName }).GetAsync();
+            foreach (var group in groups)
+            {
+                Console.WriteLine($"{group.DisplayName}, {group.Id}");
+            }
+
+            return null;
+        }
+        private static async Task<bool> SendNote(GraphServiceClient me, List<ChangedElement> changedElements, User ubdateBy, string name)
+        {
+            var user = await me.Me.Request().GetAsync();
+            var chats = await me.Users[user.Id].Chats.Request().GetAsync();
+
+            string content = "";
+            foreach (var item in changedElements)
+            {
+                content += $"{ubdateBy.DisplayName}({ubdateBy.Mail}) изменил значение в ячейке {name}: ({item.Cell}) c {item.PastValue} на {item.NowValuse}";
+            }
+
+            var chatMessage = new ChatMessage
+            {
+                Body = new ItemBody
+                {
+                    Content = content
+                }
+            };
+
+            await me.Chats[chats[0].Id].Messages
+                .Request()
+                .AddAsync(chatMessage);
+
+            return true;
         }
     }
 }
