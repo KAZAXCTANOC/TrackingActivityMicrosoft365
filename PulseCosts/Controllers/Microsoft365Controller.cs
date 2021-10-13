@@ -93,6 +93,7 @@ namespace PulseCosts.Controllers
         }
         public async Task<bool> TrakingChangeAsync(GraphServiceClient me, string IdDocument, string IdGroup, string Collumn)
         {
+            bool firstInitial = false;
             int y = 5;
             MongoDBController mongo = new MongoDBController();
             var excel = await me.Groups[IdGroup].Drive.Items[IdDocument].Workbook.Worksheets.Request().GetAsync();
@@ -117,6 +118,8 @@ namespace PulseCosts.Controllers
                     mongo.CreateElemetInfo(mongoDbElement, $"Office365PulseCost{Collumn}{y}");
 
                     MRangeLastElement = JArray.Parse(SelectedRange.Text.RootElement.ToString());
+
+                    firstInitial = true;
                 }
 
                 JArray MRange = null;
@@ -136,7 +139,7 @@ namespace PulseCosts.Controllers
                 {
                     case "D":
                         {
-                            if(MRange.First.Root.ToString() != MRangeLastElement.First.Root.ToString())
+                            if(MRange.First.Root.ToString() != MRangeLastElement.First.Root.ToString() || firstInitial == true)
                             {
                                 var listPrice = await GetDataBasePricesAsync(SingAndReturnMe());
                                 var element = await GetDataFromPulseCostAsync(SingAndReturnMe(), IdDocument, IdGroup, y);
@@ -148,7 +151,12 @@ namespace PulseCosts.Controllers
                                     El.P.Contains(element.Classifier.P)).FirstOrDefault();
 
                                 var MRangeNum = Convert.ToDecimal(Regex.Replace(MRange.First.ToString(), @"\D", ""));
-                                var MRangeLastElementNum = Convert.ToDecimal(Regex.Replace(MRangeLastElement.First.ToString(), @"\D", ""));
+                                Decimal MRangeLastElementNum = Convert.ToDecimal(Regex.Replace(MRangeLastElement.First.ToString(), @"\D", ""));
+                                if (firstInitial)
+                                {
+                                    MRangeLastElementNum = 0;
+                                }
+
                                 var cost = Convert.ToDecimal(MyNeedPrice.CostWork);
 
                                 //E
@@ -200,7 +208,7 @@ namespace PulseCosts.Controllers
 
                     case "H":
                         {
-                            if (MRange.First.Root.ToString() != MRangeLastElement.First.Root.ToString())
+                            if (MRange.First.Root.ToString() != MRangeLastElement.First.Root.ToString() || firstInitial == true)
                             {
                                 var listPrice = await GetDataBasePricesAsync(SingAndReturnMe());
                                 var element = await GetDataFromPulseCostAsync(SingAndReturnMe(), IdDocument, IdGroup, y);
@@ -212,7 +220,11 @@ namespace PulseCosts.Controllers
                                     El.P.Contains(element.Classifier.P)).FirstOrDefault();
 
                                 var MRangeNum = Convert.ToDecimal(Regex.Replace(MRange.First.ToString(), @"\D", ""));
-                                var MRangeLastElementNum = Convert.ToDecimal(Regex.Replace(MRangeLastElement.First.ToString(), @"\D", ""));
+                                Decimal MRangeLastElementNum = Convert.ToDecimal(Regex.Replace(MRangeLastElement.First.ToString(), @"\D", ""));
+                                if(firstInitial)
+                                {
+                                    MRangeLastElementNum = 0;
+                                }
                                 var cost = Convert.ToDecimal(MyNeedPrice.CostMaterial);
 
                                 //I
@@ -261,6 +273,7 @@ namespace PulseCosts.Controllers
                         break;
                 }
 
+                firstInitial = false;
                 y++;
             }
 

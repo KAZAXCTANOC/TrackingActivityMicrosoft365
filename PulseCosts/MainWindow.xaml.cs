@@ -25,21 +25,23 @@ namespace PulseCosts
         public MainWindow()
         {
             InitializeComponent();
-            Microsoft365Controller microsoft365 = new Microsoft365Controller();
+            MicrosfotAcytivityController microsfotAcytivity = new MicrosfotAcytivityController();
+            microsfotAcytivity.TrakingActivityCalcTemplateAsync("D");
 
             #region Потоки для отслеживания данных
+            //Microsoft365Controller microsoft365 = new Microsoft365Controller();
 
-            Thread thread1 = new Thread(new ThreadStart(MyThreed1));
-            thread1.Start();
+            //Thread thread1 = new Thread(new ThreadStart(MyThreed1));
+            //thread1.Start();
 
-            Thread thread = new Thread(new ThreadStart(MyThreed2));
-            thread.Start();
+            //Thread thread = new Thread(new ThreadStart(MyThreed2));
+            //thread.Start();
 
-            //Thread thread3 = new Thread(new ThreadStart(MyThreed3));
-            //thread3.Start();
+            ////Thread thread3 = new Thread(new ThreadStart(MyThreed3));
+            ////thread3.Start();
 
-            Thread thread4 = new Thread(new ThreadStart(MyThreed4));
-            thread4.Start();
+            //Thread thread4 = new Thread(new ThreadStart(MyThreed4));
+            //thread4.Start();
             #endregion
         }
 
