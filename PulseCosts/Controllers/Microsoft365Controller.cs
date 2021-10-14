@@ -61,17 +61,17 @@ namespace PulseCosts.Controllers
                 {
                     Work = new Work
                     {
-                        ProjectWork = item[2].ToString(),
-                        ActualScopeWork = item[3].ToString(),
-                        ActualCostsWork = item[4].ToString(),
-                        PredictedTotalCostWork = item[5].ToString()
+                        C = item[2].ToString(),
+                        D = item[3].ToString(),
+                        E = item[4].ToString(),
+                        F = item[5].ToString()
                     },
                     Material = new Materials
                     {
-                        VolumeMaterialsDesigned = item[6].ToString(),
-                        ActualVolumeMaterials = item[7].ToString(),
-                        ActualCostsMaterials = item[8].ToString(),
-                        PredictedTotalCostMaterials = item[9].ToString(),
+                        G = item[6].ToString(),
+                        H = item[7].ToString(),
+                        I = item[8].ToString(),
+                        J = item[9].ToString(),
                     },
                     Classifier = new Classifier
                     {
@@ -81,12 +81,6 @@ namespace PulseCosts.Controllers
                         P = item[17].ToString(),
                     }
                 };
-
-                if (tableElement.Work.ActualCostsWork == "")
-                    tableElement.Work.ActualCostsWork = "0";
-
-                if (tableElement.Material.ActualCostsMaterials == "")
-                    tableElement.Material.ActualCostsMaterials = "0";
             }
 
             return tableElement;
@@ -160,7 +154,7 @@ namespace PulseCosts.Controllers
                                 var cost = Convert.ToDecimal(MyNeedPrice.CostWork);
 
                                 //E
-                                var FinalCumDown = ((MRangeNum - MRangeLastElementNum) * cost) + Convert.ToDecimal(element.Work.ActualCostsWork);
+                                var FinalCumDown = ((MRangeNum - MRangeLastElementNum) * cost) + Convert.ToDecimal(element.Work.E);
 
                                 #region SendMessage
                                 string data = $"[[\"{FinalCumDown}\"]]";
@@ -178,7 +172,7 @@ namespace PulseCosts.Controllers
                                 decimal FinalCumDownE = 0;
                                 try
                                 {
-                                    FinalCumDownE = ((MRangeNum - Convert.ToDecimal(element.Work.ProjectWork)) * cost) + FinalCumDown;
+                                    FinalCumDownE = ((MRangeNum - Convert.ToDecimal(element.Work.C)) * cost) + FinalCumDown;
                                 }
                                 catch (Exception e)
                                 {
@@ -228,7 +222,7 @@ namespace PulseCosts.Controllers
                                 var cost = Convert.ToDecimal(MyNeedPrice.CostMaterial);
 
                                 //I
-                                var FinalCumDown = ((MRangeNum - MRangeLastElementNum) * cost) + Convert.ToDecimal(element.Material.ActualCostsMaterials);
+                                var FinalCumDown = ((MRangeNum - MRangeLastElementNum) * cost) + Convert.ToDecimal(element.Material.G);
 
                                 #region SendMessage
                                 string data = $"[[\"{FinalCumDown}\"]]";
@@ -246,7 +240,7 @@ namespace PulseCosts.Controllers
                                 decimal FinalCumDownE = 0;
                                 try
                                 {
-                                    FinalCumDownE = ((MRangeNum - Convert.ToDecimal(element.Material.VolumeMaterialsDesigned)) * cost) + FinalCumDown;
+                                    FinalCumDownE = ((MRangeNum - Convert.ToDecimal(element.Material.G)) * cost) + FinalCumDown;
                                 }
                                 catch (Exception e) { }
 

@@ -26,65 +26,30 @@ namespace PulseCosts
         {
             InitializeComponent();
             MicrosfotAcytivityController microsfotAcytivity = new MicrosfotAcytivityController();
-            microsfotAcytivity.TrakingActivityCalcTemplateAsync("D");
 
-            #region Потоки для отслеживания данных
-            //Microsoft365Controller microsoft365 = new Microsoft365Controller();
+            Thread thread1 = new Thread(new ThreadStart(MyThreed1));
+            thread1.Start();
 
-            //Thread thread1 = new Thread(new ThreadStart(MyThreed1));
-            //thread1.Start();
-
-            //Thread thread = new Thread(new ThreadStart(MyThreed2));
-            //thread.Start();
-
-            ////Thread thread3 = new Thread(new ThreadStart(MyThreed3));
-            ////thread3.Start();
-
-            //Thread thread4 = new Thread(new ThreadStart(MyThreed4));
-            //thread4.Start();
-            #endregion
+            Thread thread2 = new Thread(new ThreadStart(MyThreed2));
+            thread2.Start();
         }
 
         #region Методы для создания потоков
         public void MyThreed1()
         {
-            Microsoft365Controller microsoft365 = new Microsoft365Controller();
+            MicrosfotAcytivityController microsfotAcytivity = new MicrosfotAcytivityController();
             while (true)
             {
-                var a = Task.Run(() => microsoft365.TrakingChangeAsync(Microsoft365Controller.SingAndReturnMe(), 
-                    "01ADEVTET6J647IDZNJVB2N56SMNAJ7YAT", "892eb031-5560-4d2c-9142-0030091aabfa", "D")).Result;
+                var a = Task.Run(() => microsfotAcytivity.TrakingActivityCalcTemplateAsync("D")).Result;
             }
         }
+
         public void MyThreed2()
         {
-            Microsoft365Controller microsoft365 = new Microsoft365Controller();
-
+            MicrosfotAcytivityController microsfotAcytivity = new MicrosfotAcytivityController();
             while (true)
             {
-                var a = Task.Run(() => microsoft365.TrakingChangeAsync(Microsoft365Controller.SingAndReturnMe(),
-                    "01ADEVTET6J647IDZNJVB2N56SMNAJ7YAT", "892eb031-5560-4d2c-9142-0030091aabfa", "H")).Result;
-            }
-        }
-
-        public void MyThreed3()
-        {
-            Microsoft365Controller microsoft365 = new Microsoft365Controller();
-
-            while (true)
-            {
-                var a = Task.Run(() => microsoft365.TrakingChangeAsync(Microsoft365Controller.SingAndReturnMe(),
-                    "01ADEVTET6J647IDZNJVB2N56SMNAJ7YAT", "892eb031-5560-4d2c-9142-0030091aabfa", "С")).Result;
-            }
-        }
-
-        public void MyThreed4()
-        {
-            Microsoft365Controller microsoft365 = new Microsoft365Controller();
-
-            while (true)
-            {
-                var a = Task.Run(() => microsoft365.TrakingChangeAsync(Microsoft365Controller.SingAndReturnMe(),
-                    "01ADEVTET6J647IDZNJVB2N56SMNAJ7YAT", "892eb031-5560-4d2c-9142-0030091aabfa", "G")).Result;
+                var a = Task.Run(() => microsfotAcytivity.TrakingActivityCalcTemplateAsync("H")).Result;
             }
         }
         #endregion

@@ -8,9 +8,11 @@ namespace PulseCosts.Models
 {
     public class Work
     {
-        public string ProjectWork {get;set;}
-        public string ActualScopeWork {get;set;}
-        public string ActualCostsWork {get;set;}
-        public string PredictedTotalCostWork {get; set; }
+        public int Id { get; set; }
+        public string B { get; set; }
+        public string C { get; set; }
+        public string D { get; set; }
+        public string E { get; set; }
+        public string F { get; set; }
     }
 }
