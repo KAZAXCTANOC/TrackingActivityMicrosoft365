@@ -1,4 +1,5 @@
-﻿using Microsoft.Graph;
+﻿using log4net;
+using Microsoft.Graph;
 using Newtonsoft.Json.Linq;
 using PulseCosts.Models;
 using PulseCosts.Models.SqlDbModel;
@@ -8,18 +9,21 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PulseCosts.Controllers
 {
     class MicrosfotAcytivityController
     {
+        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         #region Ининициализация и переменные класса
         public MicrosfotAcytivityController(string IdDocument = "01ADEVTET6J647IDZNJVB2N56SMNAJ7YAT", string IdGroup = "892eb031-5560-4d2c-9142-0030091aabfa")
         {
             _ = Task.Run(() => InitialMicrosfotAcytivityControllerAsync()).Result;
             this.IdDocument = IdDocument;
             this.IdGroup = IdGroup;
+            log4net.Config.XmlConfigurator.Configure();
         }
         private string IdDocument { get; set; }
         private string IdGroup { get; set; }
@@ -33,118 +37,189 @@ namespace PulseCosts.Controllers
             return true;
         }
         #endregion
+
         /// <summary>
         /// Метод, отслеживающий активность в книге CalcTemplate(2)
         /// </summary>
         public async Task<bool> TrakingActivityCalcTemplateAsync(string Collumn)
         {
-            int i = 5;
-            PulseCostTableElement elementFromTable = await GetDataFromPulseCostAsync(i, Collumn);
-
-            while (elementFromTable != null)
+            try
             {
-                DBController = new DBController();
-                //Получение данных с базы, т.е. прошлое состояние строки
-                PulseCostTableElement elementFromDB = DBController.GetDataElement($"{elementFromTable.Work.B}{elementFromTable.Classifier.K}{elementFromTable.Classifier.M}{elementFromTable.Classifier.X}{elementFromTable.Classifier.P}");
-                if (elementFromDB != null)
+                int RowCount = await GetCountRowsAsync(5, "D");
+
+                RowCount += 5;
+                for (int i = 5; i < RowCount; i++)
                 {
-                    if(CompareElemetns(elementFromTable, elementFromDB, Collumn))
+                    DBController = new DBController();
+                    PulseCostTableElement elementFromTable = await GetDataFromPulseCostAsync(i, Collumn);
+                    if (elementFromTable == null) return false;
+                    //Получение данных с базы, т.е. прошлое состояние строки
+                    PulseCostTableElement elementFromDB = DBController.GetDataElement($"{elementFromTable.Work.B}{elementFromTable.Classifier.K}{elementFromTable.Classifier.M}{elementFromTable.Classifier.X}{elementFromTable.Classifier.P}");
+
+                    if (elementFromDB != null)
                     {
-                        PriceDataBaseElement priceDataBase = GetNeedRowFromPriceDataBase(elementFromTable);
-                        if (priceDataBase == null)
+                        if(CompareElemetns(elementFromTable, elementFromDB, Collumn))
                         {
-                            await SaveReusltToExcel("Данные классификатора пустые или неверные", i.ToString(), "E");
-                            return true;
-                        }
-                        switch (Collumn)
-                        {
-                            case"D":
-                                {
-                                    decimal E = (((Convert.ToDecimal(elementFromTable.Work.D) - Convert.ToDecimal(elementFromDB.Work.D)) * Convert.ToDecimal(priceDataBase.CostWork)) + Convert.ToDecimal(elementFromDB.Work.D));
-                                    await SaveReusltToExcel(E.ToString(), i.ToString(), "E");
-
-                                    if (elementFromTable.Work.C == "")
+                            PriceDataBaseElement priceDataBase = GetNeedRowFromPriceDataBase(elementFromTable);
+                            if (priceDataBase == null)
+                            {
+                                await SaveReusltToExcel("Данные классификатора пустые или неверные", i.ToString(), "E");
+                                return true;
+                            }
+                            switch (Collumn)
+                            {
+                                case"D":
                                     {
-                                        await SaveReusltToExcel("Ошибка вычисления", i.ToString(), "F");
-                                        elementFromTable.Work.C = "Ошибка вычисления";
-                                    }
-                                    else
-                                    {
-                                        decimal F = ((Convert.ToDecimal(elementFromTable.Work.D) - Convert.ToDecimal(elementFromTable.Work.C)) * Convert.ToDecimal(priceDataBase.CostWork)) + E;
-                                        await SaveReusltToExcel(F.ToString(), i.ToString(), "F");
-                                    }
+                                        log.Info($"Обновлена строка {i}{ Collumn}");
 
-                                    DBController.UpdatePulseCostTableElement(elementFromTable, elementFromDB.RowName);
-                                    break;
-                                }
-                            case "H":
-                                {
-                                    decimal I = ((Convert.ToDecimal(elementFromTable.Material.H) - Convert.ToDecimal(elementFromDB.Material.H)) * Convert.ToDecimal(priceDataBase.CostMaterial)) + Convert.ToDecimal(elementFromDB.Material.H);
-                                    await SaveReusltToExcel(I.ToString(), i.ToString(), "I");
+                                        if (elementFromTable.Work.E == "")
+                                        {
+                                            elementFromTable.Work.E = "0";
+                                        }
+                                        decimal E = (((Convert.ToDecimal(elementFromTable.Work.D) - Convert.ToDecimal(elementFromDB.Work.D)) * Convert.ToDecimal(priceDataBase.CostWork)) + Convert.ToDecimal(elementFromTable.Work.E));
+                                        await SaveReusltToExcel(E.ToString(), i.ToString(), "E");
 
-                                    if (elementFromTable.Material.G == "")
-                                    {
-                                        await SaveReusltToExcel("Ошибка вычисления", i.ToString(), "J");
-                                        elementFromTable.Material.G = "Ошибка вычисления";
+                                        if (elementFromTable.Work.C == "")
+                                        {
+                                            await SaveReusltToExcel("Ошибка вычисления", i.ToString(), "F");
+                                            elementFromTable.Work.C = "Ошибка вычисления";
+                                        }
+                                        else
+                                        {
+                                            try
+                                            {
+                                                decimal F = (((Convert.ToDecimal(elementFromTable.Work.C)-Convert.ToDecimal(elementFromTable.Work.D))) * Convert.ToDecimal(priceDataBase.CostWork)) + E;
+                                                await SaveReusltToExcel(F.ToString(), i.ToString(), "F");
+                                            }
+                                            catch (Exception e)
+                                            {
+                                                log.Error($"{e}");
+                                            }
+                                        }
+                                        HistoryChange change = new HistoryChange
+                                        {
+                                            B = elementFromTable.Work.B,
+                                            C = elementFromTable.Work.C,
+                                            D = elementFromTable.Work.D,
+                                            E = elementFromTable.Work.E,
+                                            F = elementFromTable.Work.F,
+                                            G = elementFromTable.Material.G,
+                                            H = elementFromTable.Material.H,
+                                            I = elementFromTable.Material.I,
+                                            CK = elementFromTable.Classifier.K,
+                                            CM = elementFromTable.Classifier.M,
+                                            CX = elementFromTable.Classifier.X,
+                                            CP = elementFromTable.Classifier.P,
+                                            TimeChange = DateTime.Now
+                                        };
+                                        DBController.CreateChange(change);
+                                        log.Info($"Обновлен елемент в базе данных {elementFromDB.RowName}");
+                                        DBController.UpdatePulseCostTableElement(elementFromTable, elementFromDB.RowName);
+                                        log.Info($"Обновлен елемент в excel {elementFromDB.RowName}");
+                                        break;
                                     }
-                                    else
+                                case "H":
                                     {
-                                        decimal J = ((Convert.ToDecimal(elementFromTable.Material.H) - Convert.ToDecimal(elementFromTable.Material.G)) * Convert.ToDecimal(priceDataBase.CostMaterial)) + I;
-                                        //TODO доделать абдейт
-                                        await SaveReusltToExcel(J.ToString(), i.ToString(), "J");
-                                    }
+                                        log.Info($"Обновлена строка {i}{Collumn}");
 
-                                    DBController.UpdatePulseCostTableElement(elementFromTable, elementFromDB.RowName);
-                                    break;
-                                }
+                                        decimal I = ((Convert.ToDecimal(elementFromTable.Material.H) - Convert.ToDecimal(elementFromDB.Material.H)) * Convert.ToDecimal(priceDataBase.CostMaterial)) + Convert.ToDecimal(elementFromDB.Material.H);
+                                        await SaveReusltToExcel(I.ToString(), i.ToString(), "I");
+
+                                        if (elementFromTable.Material.G == "")
+                                        {
+                                            await SaveReusltToExcel("Ошибка вычисления", i.ToString(), "J");
+                                            elementFromTable.Material.G = "Ошибка вычисления";
+                                        }
+                                        if (elementFromTable.Material.J == "")
+                                        {
+                                            elementFromTable.Material.J = "0";
+                                        }
+                                        else
+                                        {
+                                            try
+                                            {
+                                                decimal J = ((Convert.ToDecimal(elementFromTable.Material.G) - (Convert.ToDecimal(elementFromTable.Material.H))) * Convert.ToDecimal(priceDataBase.CostMaterial)) + Convert.ToDecimal(elementFromTable.Material.J);
+                                                await SaveReusltToExcel(J.ToString(), i.ToString(), "J");
+                                            }
+                                            catch (Exception e)
+                                            {
+                                                log.Error($"{e}");
+                                            }
+                                        }
+
+                                        HistoryChange change = new HistoryChange
+                                        {
+                                            B = elementFromTable.Work.B,
+                                            C = elementFromTable.Work.C,
+                                            D = elementFromTable.Work.D,
+                                            E = elementFromTable.Work.E,
+                                            F = elementFromTable.Work.F,
+                                            G = elementFromTable.Material.G,
+                                            H = elementFromTable.Material.H,
+                                            I = elementFromTable.Material.I,
+                                            CK = elementFromTable.Classifier.K,
+                                            CM = elementFromTable.Classifier.M,
+                                            CX = elementFromTable.Classifier.X,
+                                            CP = elementFromTable.Classifier.P
+                                        };
+                                        DBController.CreateChange(change);
+                                        DBController.UpdatePulseCostTableElementH(elementFromTable, elementFromDB.RowName);
+                                        break;
+                                    }
+                            }
                         }
                     }
-                }
-                else
-                {
-                    #region Создание сохраняемого впервые элемента базы данных
-
-                    PulseCostTableElement row = new PulseCostTableElement()
+                    else
                     {
-                        Classifier = elementFromTable.Classifier,
-                        Work = new Work
-                        {
-                            B = "0",
-                            D = "0",
-                            C = "0",
-                            E = "0",
-                            F = "0"
-                        },
-                        Material = new Materials
-                        {
-                            G = "0",
-                            H = "0",
-                            I = "0",
-                            J = "0"
-                        },
-                        ChangeTime = DateTime.Now,
-                        RowName = $"{elementFromTable.Work.B}{elementFromTable.Classifier.K}{elementFromTable.Classifier.M}{elementFromTable.Classifier.X}{elementFromTable.Classifier.P}"
-                    };
-                    #endregion
+                        #region Создание сохраняемого впервые элемента базы данных
 
-                    DBController.CreateRow(row);
+                        PulseCostTableElement row = new PulseCostTableElement()
+                        {
+                            Classifier = elementFromTable.Classifier,
+                            Work = new Work
+                            {
+                                B = "0",
+                                D = "0",
+                                C = "0",
+                                E = "0",
+                                F = "0"
+                            },
+                            Material = new Materials
+                            {
+                                G = "0",
+                                H = "0",
+                                I = "0",
+                                J = "0"
+                            },
+                            ChangeTime = DateTime.Now,
+                            RowName = $"{elementFromTable.Work.B}{elementFromTable.Classifier.K}{elementFromTable.Classifier.M}{elementFromTable.Classifier.X}{elementFromTable.Classifier.P}"
+                        };
+                        log.Debug($"Обнаружена новая строка и добавлена в базу новая строка {Collumn}:{i} {elementFromTable.Work.B}{elementFromTable.Classifier.K}{elementFromTable.Classifier.M}{elementFromTable.Classifier.X}{elementFromTable.Classifier.P}");
+                        #endregion
+
+                        DBController.CreateRow(row);
+                    }
                 }
-                i++;
-                elementFromTable = await GetDataFromPulseCostAsync(i, Collumn);
+            return false;
             }
-            return true;
+            catch (Exception e)
+            {
+                log.Error($"Ошибка {e}");
+                
+                return false;
+            }
         }
 
         private async Task SaveReusltToExcel(string SaveStr, string y, string collumn)
         {
-            var excel = await MicrosoftActivityHelper.SingAndReturnMe().Groups[IdGroup].Drive.Items[IdDocument].Workbook.Worksheets.Request().GetAsync();
+            var excel = await MicrosoftActivityHelper.MyClient.Groups[IdGroup].Drive.Items[IdDocument].Workbook.Worksheets.Request().GetAsync();
             string data = $"[[\"{SaveStr}\"]]";
             JsonDocument doc = JsonDocument.Parse(data);
             var rangeUpdate = new WorkbookRange
             {
                 Values = doc
             };
-            var res = await MicrosoftActivityHelper.SingAndReturnMe().Groups[IdGroup].Drive.Items[IdDocument].Workbook.Worksheets[excel[5].Id].Range($"{collumn}{y}")
+            var res = await MicrosoftActivityHelper.MyClient.Groups[IdGroup].Drive.Items[IdDocument].Workbook.Worksheets[excel[5].Id].Range($"{collumn}{y}")
                 .Request()
                 .PatchAsync(rangeUpdate);
         }
@@ -191,8 +266,8 @@ namespace PulseCosts.Controllers
         /// </summary>
         public async Task<JArray> GetRangeAsync(string Collumn, int y)
         {
-            var excel = await MicrosoftActivityHelper.SingAndReturnMe().Groups[IdGroup].Drive.Items[IdDocument].Workbook.Worksheets.Request().GetAsync();
-            var SelectedRange = await MicrosoftActivityHelper.SingAndReturnMe().Groups[IdGroup].Drive.Items[IdDocument].Workbook.Worksheets[excel[5].Id].Range($"{Collumn}{y}").Request().GetAsync();
+            var excel = await MicrosoftActivityHelper.MyClient.Groups[IdGroup].Drive.Items[IdDocument].Workbook.Worksheets.Request().GetAsync();
+            var SelectedRange = await MicrosoftActivityHelper.MyClient.Groups[IdGroup].Drive.Items[IdDocument].Workbook.Worksheets[excel[5].Id].Range($"{Collumn}{y}").Request().GetAsync();
             JArray MRange;
             try
             {
@@ -214,8 +289,8 @@ namespace PulseCosts.Controllers
         /// </summary>
         public async Task<PulseCostTableElement> GetDataFromPulseCostAsync(int y, string collumn)
         {
-            var excel = await MicrosoftActivityHelper.SingAndReturnMe().Groups[IdGroup].Drive.Items[IdDocument].Workbook.Worksheets.Request().GetAsync();
-            var SelectRange = await MicrosoftActivityHelper.SingAndReturnMe().Groups[IdGroup].Drive.Items[IdDocument].Workbook.Worksheets[excel[5].Id].Range($"A{y}:R{y}").Request().GetAsync();
+            var excel = await MicrosoftActivityHelper.MyClient.Groups[IdGroup].Drive.Items[IdDocument].Workbook.Worksheets.Request().GetAsync();
+            var SelectRange = await MicrosoftActivityHelper.MyClient.Groups[IdGroup].Drive.Items[IdDocument].Workbook.Worksheets[excel[5].Id].Range($"A{y}:R{y}").Request().GetAsync();
 
             List<PulseCostTableElement> ListPulseCostTableElements = new List<PulseCostTableElement>();
             PulseCostTableElement tableElement = null;
@@ -267,6 +342,21 @@ namespace PulseCosts.Controllers
             return tableElement;
         }
 
-
+        public async Task<int> GetCountRowsAsync(int y, string collumn)
+        {
+            var excel = await MicrosoftActivityHelper.MyClient.Groups[IdGroup].Drive.Items[IdDocument].Workbook.Worksheets.Request().GetAsync();
+            int i = 0;
+            while(true)
+            {
+                var SelectRange = await MicrosoftActivityHelper.MyClient.Groups[IdGroup].Drive.Items[IdDocument].Workbook.Worksheets[excel[5].Id].Range($"{collumn}{y}").Request().GetAsync();
+                var a = SelectRange.Values.RootElement.ToString();
+                if (a != "[[\"\"]]")
+                {
+                    y++;
+                    i++;
+                }
+                else return i;
+            }
+        }
     }
 }

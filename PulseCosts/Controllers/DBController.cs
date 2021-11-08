@@ -38,6 +38,11 @@ namespace PulseCosts.Controllers
             _DbContext.PulseCostTableElements.Add(rowDataElement);
             _DbContext.SaveChanges();
         }
+        public void CreateChange(HistoryChange change)
+        {
+            _DbContext.HistoryChanges.Add(change);
+            _DbContext.SaveChanges();
+        }
 
         public void UpdatePulseCostTableElement(PulseCostTableElement rowDataElement, string Id)
         {
@@ -50,6 +55,21 @@ namespace PulseCosts.Controllers
             work.D = rowDataElement.Work.D;
             work.E = rowDataElement.Work.E;
             work.F = rowDataElement.Work.F;
+
+            DbContext.SaveChanges();
+        }
+
+        public void UpdatePulseCostTableElementH(PulseCostTableElement rowDataElement, string Id)
+        {
+            DBContext DbContext = new DBContext();
+            PulseCostTableElement row = GetDataElement(Id);
+
+            var material = DbContext.Materials.Where(m => m.Id == row.MaterialId).FirstOrDefault();
+
+            material.G = rowDataElement.Material.G;
+            material.H = rowDataElement.Material.H;
+            material.I = rowDataElement.Material.I;
+            material.J = rowDataElement.Material.J;
 
             DbContext.SaveChanges();
         }

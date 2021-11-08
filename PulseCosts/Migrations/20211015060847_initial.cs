@@ -25,6 +25,36 @@ namespace PulseCosts.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "HistoryChanges",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(nullable: true),
+                    B = table.Column<string>(nullable: true),
+                    C = table.Column<string>(nullable: true),
+                    D = table.Column<string>(nullable: true),
+                    E = table.Column<string>(nullable: true),
+                    F = table.Column<string>(nullable: true),
+                    G = table.Column<string>(nullable: true),
+                    H = table.Column<string>(nullable: true),
+                    I = table.Column<string>(nullable: true),
+                    K = table.Column<string>(nullable: true),
+                    L = table.Column<string>(nullable: true),
+                    CC = table.Column<string>(nullable: true),
+                    CE = table.Column<string>(nullable: true),
+                    CK = table.Column<string>(nullable: true),
+                    CM = table.Column<string>(nullable: true),
+                    CX = table.Column<string>(nullable: true),
+                    CP = table.Column<string>(nullable: true),
+                    TimeChange = table.Column<DateTime>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_HistoryChanges", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Materials",
                 columns: table => new
                 {
@@ -50,7 +80,11 @@ namespace PulseCosts.Migrations
                     C = table.Column<string>(nullable: true),
                     D = table.Column<string>(nullable: true),
                     E = table.Column<string>(nullable: true),
-                    F = table.Column<string>(nullable: true)
+                    F = table.Column<string>(nullable: true),
+                    G = table.Column<string>(nullable: true),
+                    H = table.Column<string>(nullable: true),
+                    I = table.Column<string>(nullable: true),
+                    J = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {
@@ -110,6 +144,9 @@ namespace PulseCosts.Migrations
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "HistoryChanges");
+
             migrationBuilder.DropTable(
                 name: "PulseCostTableElements");
 

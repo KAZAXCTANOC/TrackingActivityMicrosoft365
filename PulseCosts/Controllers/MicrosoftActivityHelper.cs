@@ -13,6 +13,22 @@ namespace PulseCosts.Controllers
 {
     public static class MicrosoftActivityHelper
     {
+        private static GraphServiceClient myClient = null;
+        public static GraphServiceClient MyClient 
+        {
+            get 
+            {
+                if (myClient == null)
+                {
+                    return SingAndReturnMe();
+                }
+                else return myClient;
+            }
+            set
+            {
+                myClient = value;
+            }
+        }
         #region Методы
         public static async Task<List<PriceDataBaseElement>> GetDataBasePricesAsync(string IdGroup = "fa78a005-e9e8-4aa4-b01a-94d0d0c19fc5", string IdDocument = "01N2KAJ4PBJXRHT5QQ6ZCYPTTKRYQJ4BRY")
         {
@@ -62,10 +78,14 @@ namespace PulseCosts.Controllers
                             requestMessage.Headers.Authorization = new AuthenticationHeaderValue("bearer", access_token);
                             return Task.FromResult(0);
                         }));
+                Console.WriteLine("Авторизация");
+
+                myClient = graphserviceClient;
                 return graphserviceClient;
             }
             catch (Exception e)
             {
+
             }
             return null;
         }

@@ -5,8 +5,29 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PulseCosts"
         mc:Ignorable="d"
+        xmlns:VM="clr-namespace:PulseCosts.ViewModels"
         Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        
+    <Window.DataContext>
+        <VM:MainWindowViewModel/>
+    </Window.DataContext>
+    
+    <Grid Margin="15,10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="100"/>
+        </Grid.ColumnDefinitions>
+
+        <DockPanel Grid.Column="0">
+            <TextBox Text="{Binding document, Mode=OneWay}"
+                             TextWrapping="Wrap"
+                             Padding="5" FontSize="14"
+                             IsReadOnly="True"
+                             BorderThickness="0"
+                             MinHeight="100"
+                             AcceptsReturn="True"
+                             SelectionBrush="{x:Null}"
+                             Cursor="Arrow"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+        </DockPanel>
     </Grid>
 </Window>

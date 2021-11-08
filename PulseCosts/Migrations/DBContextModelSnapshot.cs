@@ -100,6 +100,72 @@ namespace PulseCosts.Migrations
                     b.ToTable("PulseCostTableElements");
                 });
 
+            modelBuilder.Entity("PulseCosts.Models.SqlDbModel.HistoryChange", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+
+                    b.Property<string>("B")
+                        .HasColumnType("text");
+
+                    b.Property<string>("C")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CC")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CE")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CK")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CM")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CP")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CX")
+                        .HasColumnType("text");
+
+                    b.Property<string>("D")
+                        .HasColumnType("text");
+
+                    b.Property<string>("E")
+                        .HasColumnType("text");
+
+                    b.Property<string>("F")
+                        .HasColumnType("text");
+
+                    b.Property<string>("G")
+                        .HasColumnType("text");
+
+                    b.Property<string>("H")
+                        .HasColumnType("text");
+
+                    b.Property<string>("I")
+                        .HasColumnType("text");
+
+                    b.Property<string>("K")
+                        .HasColumnType("text");
+
+                    b.Property<string>("L")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("TimeChange")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("HistoryChanges");
+                });
+
             modelBuilder.Entity("PulseCosts.Models.Work", b =>
                 {
                     b.Property<int>("Id")
@@ -120,6 +186,18 @@ namespace PulseCosts.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("F")
+                        .HasColumnType("text");
+
+                    b.Property<string>("G")
+                        .HasColumnType("text");
+
+                    b.Property<string>("H")
+                        .HasColumnType("text");
+
+                    b.Property<string>("I")
+                        .HasColumnType("text");
+
+                    b.Property<string>("J")
                         .HasColumnType("text");
 
                     b.HasKey("Id");

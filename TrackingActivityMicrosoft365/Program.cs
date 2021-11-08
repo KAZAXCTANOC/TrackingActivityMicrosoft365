@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,6 +21,7 @@ namespace TrackingActivityMicrosoft365
     //AH_7Q~iiqHTJnYKeZrE3HE06h1P7f05R4mDzR
     public partial class Program
     {
+        private static readonly HttpClient client = new HttpClient();
         private static string Instance = "https://login.microsoftonline.com/";
         private static string ClientIdProgress = "34f889b6-7528-4064-8840-0c4e3b355cfd";
         private static string TenantIdProgress = "8a648ae3-f42e-4858-b848-ef62d3422f6d";
@@ -34,7 +36,7 @@ namespace TrackingActivityMicrosoft365
 
             var tasks = new List<Task>();
 
-            //tasks.Add(TrakingChangeAsync("E2:E1295", 0, "E", "OfficeDataBase"));
+            tasks.Add(TrakingChangeAsync("E2:E1295", 0, "E", "OfficeDataBase"));
             tasks.Add(TrakingChangeAsync("E2:E1295", 0, "F", "OfficeDataBase2"));
             tasks.Add(TrakingChangeAsync("E2:E4327", 1, "E", "OfficeDataBase3"));
 
@@ -208,20 +210,25 @@ namespace TrackingActivityMicrosoft365
         }
         private static async Task<bool> SendNote(GraphServiceClient me, List<ChangedElement> changedElements, User ubdateBy, string name)
         {
-            var user = await me.Me.Request().GetAsync();
-            var chats = await me.Users[user.Id].Chats.Request().GetAsync();
-
-            string content = "";
+            var chats = await me.Teams["fa78a005-e9e8-4aa4-b01a-94d0d0c19fc5"].Channels.Request().GetAsync();
+            var content2 = "";
+            string content = "<ul>";
             foreach (var item in changedElements)
             {
-                content += $"{ubdateBy.DisplayName}({ubdateBy.Mail}) изменил значение в ячейке {name}: ({item.Cell}) c {item.PastValue} на {item.NowValuse}";
+                content2 += $"{ubdateBy.DisplayName}({ubdateBy.Mail}) изменил значение в ячейке {name}: ({item.Cell}) c {item.PastValue} на {item.NowValuse} +\n";
+                content += $"<li>{ubdateBy.DisplayName}({ubdateBy.Mail}) изменил значение в ячейке {name}: ({item.Cell}) c {item.PastValue} на {item.NowValuse}</li>";
             }
+            content += "</ul>";
+
+            await client.PostAsync($"http://192.168.9.33:8005/message?messagetext={content2}", null);
+
 
             var chatMessage = new ChatMessage
             {
                 Body = new ItemBody
                 {
-                    Content = content
+                    Content = content,
+                    ContentType = BodyType.Html
                 }
             };
 

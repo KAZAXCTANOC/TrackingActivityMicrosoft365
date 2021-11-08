@@ -11,6 +11,7 @@ namespace PulseCosts
 {
     class DBContext : DbContext
     {
+        public DbSet<HistoryChange> HistoryChanges { get; set; }
         public DbSet<Materials> Materials { get; set; }
         public DbSet<Classifier> Classifiers { get; set; }
         public DbSet<Work> Works { get; set; }
